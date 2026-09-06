@@ -85,17 +85,17 @@
         <section class="work-panel editor-panel">
           <div class="panel-header">
             <div class="tabs" role="tablist" aria-label="编辑模式">
-              <button class="tab active" data-mode="markdown">Markdown</button>
-              <button class="tab" data-mode="rich">富文本</button>
+              <button class="tab active" data-mode="rich">富文本</button>
+              <button class="tab" data-mode="markdown">Markdown</button>
             </div>
             <span class="auto-hint"><i></i> 粘贴时自动识别段落</span>
           </div>
 
-          <div id="markdown-wrap" class="input-wrap">
+          <div id="markdown-wrap" class="input-wrap hidden">
             <textarea id="markdown" spellcheck="false" aria-label="Markdown 编辑器" placeholder="在这里粘贴 Markdown 或普通文章…&#10;&#10;粘贴多行文字时会自动识别标题、段落和列表。"></textarea>
           </div>
 
-          <div id="rich-wrap" class="input-wrap hidden">
+          <div id="rich-wrap" class="input-wrap">
             <div class="toolbar" aria-label="富文本工具栏">
               <button data-command="bold" title="加粗"><b>B</b></button>
               <button data-command="italic" title="斜体"><i>I</i></button>
@@ -128,7 +128,7 @@
       <section class="inspector-section">
         <h2>智能识别</h2>
         <label class="switch-row">
-          <span><b>粘贴时自动分段</b><small>识别标题、章节、列表和正文</small></span>
+          <span><b>自动识别结构层级</b><small>主标题、导语、章节、小节与正文</small></span>
           <input id="auto-structure" type="checkbox" checked><i></i>
         </label>
         <label class="switch-row emphasis-row">
@@ -136,7 +136,7 @@
           <input id="auto-emphasis" type="checkbox" checked><i></i>
         </label>
         <div id="structure-summary" class="recognition-result">
-          <span>✦</span><p><b>结构识别已开启</b><small>粘贴多行纯文本即可自动整理</small></p>
+          <span>✦</span><p><b>层级排版已开启</b><small>粘贴文章后自动建立清晰结构</small></p>
         </div>
         <div id="emphasis-summary" class="recognition-result emphasis-result">
           <span>◆</span><p><b>精彩句识别已开启</b><small>预览时自动判断并突出重点表达</small></p>

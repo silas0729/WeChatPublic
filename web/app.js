@@ -1,6 +1,6 @@
 (() => {
   const state = {
-    mode: "markdown",
+    mode: "rich",
     theme: "default",
     timer: 0,
     toastTimer: 0,
@@ -250,7 +250,8 @@
     event.preventDefault();
     const savedRange = captureRichRange();
     try {
-      if (html && /<(?:h[1-6]|p|div|ul|ol|blockquote|pre|table|img)\b/i.test(html)) {
+      const shouldPreserveHTML = html && /<(?:h[1-6]|ul|ol|blockquote|pre|table|img)\b/i.test(html);
+      if (shouldPreserveHTML) {
         const cleaned = await postJSON("/api/inline", { content: html, theme: state.theme });
         insertRichHTML(cleaned.html, savedRange);
         $("#structure-summary").innerHTML = "<span>✓</span><p><b>已保留富文本结构</b><small>危险标签与外部样式已被清理</small></p>";
@@ -420,8 +421,8 @@
   $("#export").addEventListener("click", exportHTML);
   $("#auto-structure").addEventListener("change", (event) => {
     $("#structure-summary").innerHTML = event.target.checked
-      ? "<span>✦</span><p><b>结构识别已开启</b><small>粘贴多行纯文本即可自动整理</small></p>"
-      : "<span>—</span><p><b>结构识别已关闭</b><small>粘贴时将保留原始内容</small></p>";
+      ? "<span>✦</span><p><b>层级排版已开启</b><small>粘贴文章后自动建立清晰结构</small></p>"
+      : "<span>—</span><p><b>层级排版已关闭</b><small>粘贴时将保留原始内容</small></p>";
   });
   $("#auto-emphasis").addEventListener("change", () => {
     render();

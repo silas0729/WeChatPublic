@@ -15,7 +15,7 @@ func TestMarkdownProducesInlineStyles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"<h2", "border-left:4px solid #2563eb", "<p style=", "<code style="} {
+	for _, want := range []string{"<h2", "border-left:5px solid #2563eb", "<p style=", "<code style="} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("expected %q in %s", want, got)
 		}
@@ -90,6 +90,40 @@ func TestStructurePlainTextKeepsCodeFenceTogether(t *testing.T) {
 	got, _ := structurePlainText(input)
 	if !strings.Contains(got, "```go\nfunc main() {}\n```") {
 		t.Fatalf("code fence was split: %s", got)
+	}
+}
+
+func TestStructurePlainTextBuildsThreeHeadingLevels(t *testing.T) {
+	input := "深度思考的价值，究竟是什么？\n\n这是一段导语。\n\n为什么深度思考越来越稀缺\n\n这是章节正文。\n\n（一）信息过载\n\n这是小节正文。"
+	got, stats := structurePlainText(input)
+	for _, want := range []string{"# 深度思考的价值，究竟是什么？", "## 为什么深度思考越来越稀缺", "### （一）信息过载"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("expected hierarchy %q in:\n%s", want, got)
+		}
+	}
+	if stats.headings != 3 {
+		t.Fatalf("expected 3 headings, got %+v", stats)
+	}
+}
+
+func TestThemeHierarchyStylesAreDistinct(t *testing.T) {
+	a := newApp()
+	input := "<h1>主标题</h1><p>导语内容。</p><h2>章节标题</h2><h3>小节标题</h3>"
+	warm, err := a.inline(input, "warm")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"text-align:center", "background:#c2410c", "border-bottom:1px solid #c2410c", "font-size:17px;line-height:1.9"} {
+		if !strings.Contains(warm, want) {
+			t.Fatalf("warm hierarchy style %q missing: %s", want, warm)
+		}
+	}
+	ink, err := a.inline(input, "ink")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(ink, "letter-spacing:0.16em") || !strings.Contains(ink, "border-bottom:2px solid #171717") {
+		t.Fatalf("ink hierarchy styles missing: %s", ink)
 	}
 }
 

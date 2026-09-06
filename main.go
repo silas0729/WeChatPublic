@@ -61,6 +61,8 @@ type structureStats struct {
 
 var (
 	chapterHeading = regexp.MustCompile(`^(?:第[一二三四五六七八九十百0-9]+[章节部分篇]|[一二三四五六七八九十百]+[、.．]|[0-9]+[、.．])\s*\S+`)
+	minorHeading   = regexp.MustCompile(`^(?:（[一二三四五六七八九十0-9]+）\s*|\([0-9]+\)\s*|[0-9]+\.[0-9]+\s+)\S+`)
+	headingWords   = regexp.MustCompile(`^(为什么|如何|怎样|怎么)|(?:方法|建议|总结|结语|真相|原因|优势|误区|步骤|指南|复盘|启示|价值|未来|代价|选择|原则|答案)$`)
 	bulletLine     = regexp.MustCompile(`^[•●▪◦·]\s*(.+)$`)
 	orderedLine    = regexp.MustCompile(`^[0-9]+[.)、．]\s+\S+`)
 	markdownList   = regexp.MustCompile(`^[-+*]\s+\S+`)
@@ -259,11 +261,17 @@ func structurePlainText(input string) (string, structureStats) {
 		case strings.HasPrefix(line, "#"):
 			appendBlock(line, "heading")
 			stats.headings++
+		case minorHeading.MatchString(line) && utf8.RuneCountInString(line) <= 48:
+			appendBlock("### "+line, "heading")
+			stats.headings++
 		case chapterHeading.MatchString(line) && utf8.RuneCountInString(line) <= 48:
 			appendBlock("## "+line, "heading")
 			stats.headings++
 		case firstContent && looksLikeTitle(line, nextLineIsBlank(lines, index)):
 			appendBlock("# "+line, "heading")
+			stats.headings++
+		case looksLikeSubheading(lines, index, line):
+			appendBlock("## "+line, "heading")
 			stats.headings++
 		case bulletLine.MatchString(line):
 			appendBlock(bulletLine.ReplaceAllString(line, "- $1"), "list")
@@ -288,14 +296,37 @@ func structurePlainText(input string) (string, structureStats) {
 
 func looksLikeTitle(line string, followedByBlank bool) bool {
 	length := utf8.RuneCountInString(line)
-	if length == 0 || length > 36 || (length > 24 && !followedByBlank) {
+	if length == 0 || length > 36 {
 		return false
 	}
-	return !strings.ContainsAny(line, "。！？!?；;，,")
+	if followedByBlank {
+		return !strings.HasSuffix(line, "。") && !strings.HasSuffix(line, ".")
+	}
+	return length <= 24 && !strings.ContainsAny(line, "。！？!?；;")
 }
 
 func nextLineIsBlank(lines []string, index int) bool {
 	return index+1 >= len(lines) || strings.TrimSpace(lines[index+1]) == ""
+}
+
+func looksLikeSubheading(lines []string, index int, line string) bool {
+	length := utf8.RuneCountInString(line)
+	if length < 3 || length > 28 || strings.ContainsAny(line, "。！!；;，,") {
+		return false
+	}
+	previousBlank := index == 0 || strings.TrimSpace(lines[index-1]) == ""
+	nextBlank := nextLineIsBlank(lines, index)
+	if !previousBlank && !nextBlank {
+		return false
+	}
+	if strings.HasSuffix(line, "？") || strings.HasSuffix(line, "?") {
+		candidate := strings.TrimSuffix(strings.TrimSuffix(line, "？"), "?")
+		return headingWords.MatchString(candidate)
+	}
+	if headingWords.MatchString(line) {
+		return true
+	}
+	return previousBlank && nextBlank && length <= 14
 }
 
 func (a *app) inline(fragment, themeName string) (string, error) {
@@ -311,6 +342,7 @@ func (a *app) inlineWithEmphasis(fragment, themeName string, emphasize bool) (st
 	}
 
 	root := doc.Find("main").First()
+	applyHierarchyRoles(root)
 	emphasisCount := 0
 	if emphasize {
 		emphasisCount = applySmartEmphasis(root)
@@ -321,6 +353,13 @@ func (a *app) inlineWithEmphasis(fragment, themeName string, emphasize bool) (st
 		if level, exists := s.Attr("data-auto-emphasis"); exists {
 			css, ok = styles["emphasis "+level]
 			s.RemoveAttr("data-auto-emphasis")
+		}
+		if role, exists := s.Attr("data-layout-role"); exists {
+			if roleCSS, found := styles["role "+role]; found {
+				css = mergeStyle(css, roleCSS)
+				ok = true
+			}
+			s.RemoveAttr("data-layout-role")
 		}
 		if tag == "code" && s.Parent().Is("pre") {
 			css, ok = styles["pre code"]
@@ -346,6 +385,18 @@ func (a *app) inlineWithEmphasis(fragment, themeName string, emphasize bool) (st
 		return "", 0, fmt.Errorf("serialize html: %w", err)
 	}
 	return result, emphasisCount, nil
+}
+
+func applyHierarchyRoles(root *goquery.Selection) {
+	title := root.Find("h1").First()
+	if title.Length() == 0 {
+		return
+	}
+	title.SetAttr("data-layout-role", "title")
+	lead := title.NextFiltered("p")
+	if lead.Length() > 0 && utf8.RuneCountInString(strings.TrimSpace(lead.Text())) <= 180 {
+		lead.SetAttr("data-layout-role", "lead")
+	}
 }
 
 func applySmartEmphasis(root *goquery.Selection) int {
@@ -513,12 +564,12 @@ func theme(name string) map[string]string {
 		quoteBackground = "#fafafa"
 	}
 
-	return map[string]string{
+	styles := map[string]string{
 		"*":                "max-width:100%;box-sizing:border-box;",
-		"h1":               "margin:1.4em 0 0.8em;font-size:26px;line-height:1.4;font-weight:700;color:#111827;text-align:left;",
-		"h2":               "margin:1.35em 0 0.7em;padding-left:10px;border-left:4px solid " + accent + ";font-size:22px;line-height:1.5;font-weight:700;color:#111827;",
-		"h3":               "margin:1.25em 0 0.65em;font-size:19px;line-height:1.55;font-weight:700;color:" + accent + ";",
-		"h4":               "margin:1.2em 0 0.6em;font-size:17px;line-height:1.6;font-weight:700;color:#1f2937;",
+		"h1":               "margin:1.2em 0 1em;padding:0 0 14px;border-bottom:2px solid " + accent + ";font-size:28px;line-height:1.4;font-weight:700;color:#111827;text-align:left;letter-spacing:0.02em;",
+		"h2":               "margin:1.9em 0 0.85em;padding:7px 12px;border-left:5px solid " + accent + ";background:" + quoteBackground + ";font-size:21px;line-height:1.5;font-weight:700;color:#111827;",
+		"h3":               "margin:1.55em 0 0.7em;padding:0 0 6px;border-bottom:1px solid " + accent + ";font-size:18px;line-height:1.55;font-weight:700;color:" + accent + ";",
+		"h4":               "margin:1.35em 0 0.65em;font-size:17px;line-height:1.6;font-weight:700;color:#1f2937;",
 		"p":                "margin:0 0 1em;font-size:16px;line-height:1.85;letter-spacing:0.03em;color:#374151;text-align:justify;word-break:break-word;",
 		"div":              "margin:0 0 1em;font-size:16px;line-height:1.85;letter-spacing:0.03em;color:#374151;word-break:break-word;",
 		"strong":           "font-weight:700;color:#111827;",
@@ -544,7 +595,33 @@ func theme(name string) map[string]string {
 		"emphasis key":     "font-weight:700;color:" + accent + ";",
 		"emphasis data":    "padding:1px 3px;background:" + quoteBackground + ";font-weight:700;color:" + accent + ";",
 		"emphasis insight": "font-weight:700;color:#111827;border-bottom:2px solid " + accent + ";",
+		"role title":       "margin-top:0.6em;",
+		"role lead":        "margin:0 0 1.6em;padding:12px 14px;border-radius:4px;background:" + quoteBackground + ";font-size:17px;line-height:1.9;color:#4b5563;",
 	}
+
+	switch name {
+	case "warm":
+		styles["h1"] = "margin:1.1em 0 1.35em;padding:0 0 12px;border-bottom:1px solid " + accent + ";font-size:27px;line-height:1.45;font-weight:600;color:" + accent + ";text-align:center;letter-spacing:0.04em;"
+		styles["h2"] = "display:table;margin:1.9em 0 0.9em;padding:6px 13px;border:0;background:" + accent + ";font-size:20px;line-height:1.5;font-weight:700;color:#ffffff;"
+		styles["h3"] = "margin:1.55em 0 0.7em;padding:0 0 7px;border-bottom:1px solid " + accent + ";font-size:18px;line-height:1.55;font-weight:700;color:" + accent + ";"
+		styles["role lead"] = "margin:0 0 1.6em;padding:0 2px;background:transparent;font-size:17px;line-height:1.9;color:#4b5563;text-align:center;"
+		styles["blockquote"] = "margin:1.2em 0;padding:12px 16px;border-left:4px solid " + accent + ";background:" + quoteBackground + ";color:#57534e;"
+	case "violet":
+		styles["h1"] = "margin:1.1em 0 1.25em;padding:0 0 13px;border-bottom:1px solid #c4b5fd;font-size:27px;line-height:1.45;font-weight:500;color:#4c4558;text-align:center;letter-spacing:0.08em;"
+		styles["h2"] = "margin:1.9em 0 0.85em;padding:8px 12px;border-left:4px solid " + accent + ";background:#faf7ff;font-size:20px;line-height:1.5;font-weight:700;color:#3f3650;"
+		styles["h3"] = "margin:1.55em 0 0.7em;padding:0 0 7px;border-bottom:2px solid #ddd6fe;font-size:18px;line-height:1.55;font-weight:600;color:" + accent + ";"
+		styles["role lead"] = "margin:0 0 1.6em;padding:12px 14px;border-left:3px solid #c4b5fd;background:#faf7ff;font-size:17px;line-height:1.9;color:#645b70;"
+	case "ink":
+		styles["h1"] = "margin:1.1em 0 1.5em;padding:0;border:0;font-size:27px;line-height:1.45;font-weight:400;color:#3f3f46;text-align:center;letter-spacing:0.16em;"
+		styles["h2"] = "margin:2em 0 0.9em;padding:0 0 8px;border:0;border-bottom:2px solid #171717;background:transparent;font-size:21px;line-height:1.5;font-weight:700;color:#171717;"
+		styles["h3"] = "margin:1.6em 0 0.75em;padding-left:10px;border:0;border-left:3px solid #171717;font-size:18px;line-height:1.55;font-weight:700;color:#27272a;"
+		styles["role lead"] = "margin:0 0 1.6em;padding:0;background:transparent;font-size:17px;line-height:2;color:#52525b;text-align:center;"
+		styles["blockquote"] = "margin:1.2em 0;padding:12px 16px;border:0;border-top:1px solid #a3a3a3;border-bottom:1px solid #a3a3a3;background:transparent;color:#525252;font-style:italic;"
+	default:
+		styles["h3"] = "display:table;margin:1.55em 0 0.7em;padding:5px 10px;border:0;background:" + accent + ";font-size:17px;line-height:1.5;font-weight:700;color:#ffffff;"
+	}
+
+	return styles
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
