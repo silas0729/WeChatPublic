@@ -7,7 +7,9 @@
     html: "",
     copied: false,
     richSeeded: false,
-    emphasisCount: 0
+    emphasisCount: 0,
+    previewed: false,
+    lastFocus: null
   };
 
   const $ = (selector) => document.querySelector(selector);
@@ -56,10 +58,13 @@
       state.emphasisCount = result.emphasis || 0;
       state.copied = false;
       preview.innerHTML = result.html;
+      const hasPreview = result.html.trim() !== "";
+      $("#preview-empty").classList.toggle("hidden", hasPreview);
+      $("#preview-end").classList.toggle("hidden", !hasPreview);
       updateEmphasisSummary();
       updateStats();
       updateProgress();
-      setStatus("预览已更新 · 已生成全内联样式");
+      setStatus(hasPreview ? "内容已更新 · 已生成全内联样式" : "等待输入或粘贴文章内容");
     } catch (error) {
       setStatus(error.message, true);
     }
@@ -103,12 +108,21 @@
 
   function updateProgress() {
     const hasContent = characterCount(currentPlainText()) > 0;
-    const score = state.copied ? 5 : (hasContent && state.html ? 4 : 1);
+    const score = state.copied ? 5 : (state.previewed && hasContent ? 4 : (hasContent && state.html ? 3 : 0));
     $("#progress-score").textContent = score;
     $("#progress-bar").style.width = `${score * 20}%`;
-    const chip = $("#publish-chip");
-    chip.textContent = state.copied ? "✓ 发布" : "○ 发布";
-    chip.classList.toggle("done", state.copied);
+    setProgressChip("#import-chip", "导入", hasContent, !hasContent);
+    setProgressChip("#structure-chip", "结构", hasContent, false);
+    setProgressChip("#theme-chip", "主题", hasContent, false);
+    setProgressChip("#preview-chip", "预览", state.previewed && hasContent, hasContent && !state.previewed);
+    setProgressChip("#publish-chip", "发布", state.copied, state.previewed && !state.copied);
+  }
+
+  function setProgressChip(selector, label, done, current) {
+    const chip = $(selector);
+    chip.textContent = `${done ? "✓" : "○"} ${label}`;
+    chip.classList.toggle("done", done);
+    chip.classList.toggle("current", current);
   }
 
   function updateRecognition(result) {
@@ -264,6 +278,22 @@
     render();
   }
 
+  async function openPreview() {
+    state.lastFocus = document.activeElement;
+    await render();
+    state.previewed = true;
+    updateProgress();
+    setActiveStep("preview");
+    $("#phone-scroll").scrollTop = 0;
+    $("#preview-modal").classList.remove("hidden");
+    $("#close-preview").focus();
+  }
+
+  function closePreview() {
+    $("#preview-modal").classList.add("hidden");
+    if (state.lastFocus && typeof state.lastFocus.focus === "function") state.lastFocus.focus();
+  }
+
   async function copyHTML() {
     if (!state.html) {
       showToast("当前没有可复制的内容", true);
@@ -354,7 +384,7 @@
       setActiveStep(step);
       if (step === "structure") smartStructureAll();
       else if (step === "theme") $(".theme-strip").scrollIntoView({ behavior: "smooth", block: "nearest" });
-      else if (step === "preview") $(".preview-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      else if (step === "preview") openPreview();
       else if (step === "publish") copyHTML();
       else (state.mode === "markdown" ? markdown : rich).focus();
     });
@@ -381,6 +411,10 @@
   });
   rich.addEventListener("paste", handleRichPaste);
   $("#smart-structure").addEventListener("click", smartStructureAll);
+  $("#open-preview").addEventListener("click", openPreview);
+  $("#modal-copy").addEventListener("click", copyHTML);
+  $$('[data-close-preview]').forEach((button) => button.addEventListener("click", closePreview));
+  $("#close-preview").addEventListener("click", closePreview);
   $("#copy").addEventListener("click", copyHTML);
   $("#top-copy").addEventListener("click", copyHTML);
   $("#export").addEventListener("click", exportHTML);
@@ -392,6 +426,9 @@
   $("#auto-emphasis").addEventListener("change", () => {
     render();
     showToast($("#auto-emphasis").checked ? "已开启精彩句自动标注" : "已关闭精彩句自动标注");
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !$("#preview-modal").classList.contains("hidden")) closePreview();
   });
 
   render();

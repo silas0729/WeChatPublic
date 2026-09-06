@@ -56,9 +56,10 @@
           <h1>文章排版工作台</h1>
           <p>输入内容后自动生成微信公众号兼容的全内联样式 HTML</p>
         </div>
-        <button id="smart-structure" class="outline-button">
-          <span>✦</span> 智能识别全文结构
-        </button>
+        <div class="studio-header-actions">
+          <button id="smart-structure" class="outline-button"><span>✦</span> 智能识别全文结构</button>
+          <button id="open-preview" class="preview-button"><span>▣</span> 手机预览</button>
+        </div>
       </div>
 
       <div class="theme-strip" aria-label="主题预设">
@@ -91,27 +92,7 @@
           </div>
 
           <div id="markdown-wrap" class="input-wrap">
-            <textarea id="markdown" spellcheck="false" aria-label="Markdown 编辑器"># 欢迎使用微信排版台
-
-这是一款**完全本地运行**的微信公众号排版工具。
-
-真正重要的不是堆叠多少样式，而是让读者一眼看到文章的核心。
-
-## 支持的内容
-
-- Markdown 与富文本
-- 自动识别标题、段落和列表
-- 图片、引用、表格和代码块
-- 复制时生成全内联样式 HTML
-
-> 你的文章内容不会离开当前设备。
-
-```go
-func main() {
-    fmt.Println("Hello, WeChat!")
-}
-```
-</textarea>
+            <textarea id="markdown" spellcheck="false" aria-label="Markdown 编辑器" placeholder="在这里粘贴 Markdown 或普通文章…&#10;&#10;粘贴多行文字时会自动识别标题、段落和列表。"></textarea>
           </div>
 
           <div id="rich-wrap" class="input-wrap hidden">
@@ -123,7 +104,7 @@ func main() {
               <button data-command="insertUnorderedList">列表</button>
               <label class="file-button">插入图片<input id="image" type="file" accept="image/*"></label>
             </div>
-            <div id="rich" class="rich-editor" contenteditable="true" aria-label="富文本编辑器"><h2>富文本编辑</h2><p>可直接粘贴普通文章，系统会自动识别标题、段落和列表。</p></div>
+            <div id="rich" class="rich-editor" contenteditable="true" data-placeholder="在这里粘贴文章、图片或开始写作…" aria-label="富文本编辑器"></div>
           </div>
 
           <div class="editor-footer">
@@ -132,28 +113,15 @@ func main() {
           </div>
         </section>
 
-        <section class="work-panel preview-panel">
-          <div class="panel-header preview-heading">
-            <div><b>公众号预览</b><span>375px 内容宽度</span></div>
-            <span class="live-badge"><i></i> 实时</span>
-          </div>
-          <div class="preview-scroll">
-            <div class="phone-shell">
-              <div class="wechat-bar"><span>‹</span><b>公众号文章预览</b><i>•••</i></div>
-              <article id="preview" class="preview"></article>
-              <div class="preview-end">— END —</div>
-            </div>
-          </div>
-        </section>
       </div>
     </section>
 
     <aside class="inspector">
       <section class="inspector-section progress-section">
-        <div class="inspector-title"><b>配置进度</b><strong><span id="progress-score">4</span><small>/5</small></strong></div>
+        <div class="inspector-title"><b>配置进度</b><strong><span id="progress-score">0</span><small>/5</small></strong></div>
         <div class="progress-track"><i id="progress-bar"></i></div>
         <div class="progress-chips">
-          <span class="done">✓ 导入</span><span class="done">✓ 结构</span><span class="done">✓ 主题</span><span class="current">○ 预览</span><span id="publish-chip">○ 发布</span>
+          <span id="import-chip" class="current">○ 导入</span><span id="structure-chip">○ 结构</span><span id="theme-chip">○ 主题</span><span id="preview-chip">○ 预览</span><span id="publish-chip">○ 发布</span>
         </div>
       </section>
 
@@ -198,6 +166,43 @@ func main() {
       </section>
     </aside>
   </main>
+
+  <div id="preview-modal" class="preview-modal hidden" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
+    <button class="modal-backdrop" data-close-preview aria-label="关闭手机预览"></button>
+    <section class="preview-dialog">
+      <header class="preview-dialog-header">
+        <div>
+          <span class="modal-kicker">WECHAT PREVIEW</span>
+          <h2 id="preview-modal-title">微信公众号手机预览</h2>
+          <p>390px 真实手机视口 · 文章区域可独立滚动</p>
+        </div>
+        <button id="close-preview" class="close-preview" aria-label="关闭预览">×</button>
+      </header>
+      <div class="device-stage">
+        <div class="phone-device">
+          <i class="phone-button phone-button-top"></i>
+          <i class="phone-button phone-button-middle"></i>
+          <i class="phone-button phone-button-side"></i>
+          <div class="device-screen">
+            <div class="ios-status"><b>9:41</b><span class="dynamic-island"></span><span>● ◒ ▰</span></div>
+            <div class="wechat-nav"><button aria-label="返回">‹</button><b>公众号文章预览</b><span>•••</span></div>
+            <div id="phone-scroll" class="phone-article-scroll">
+              <div id="preview-empty" class="preview-empty">
+                <span>文</span><b>还没有文章内容</b><p>关闭预览，在编辑区粘贴或输入文章后再查看。</p>
+              </div>
+              <article id="preview" class="preview"></article>
+              <div id="preview-end" class="preview-end hidden">— 已经到底了 —</div>
+            </div>
+            <div class="home-indicator"></div>
+          </div>
+        </div>
+      </div>
+      <footer class="preview-dialog-footer">
+        <span><i></i> 实时同步当前编辑内容</span>
+        <div><button id="modal-copy" class="outline-button">复制文章</button><button data-close-preview class="preview-button">返回编辑</button></div>
+      </footer>
+    </section>
+  </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/app.js" defer></script>
