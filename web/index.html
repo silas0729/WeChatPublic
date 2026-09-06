@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>微信排版台</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">微</span>
+      <div>
+        <strong>微信排版台</strong>
+        <span>WeChat Publisher</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="local-badge"><i></i> 纯本地运行</span>
+      <span class="privacy-copy">文章与图片不会上传</span>
+      <button id="top-copy" class="ghost-button">复制排版结果</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="workflow-sidebar" aria-label="排版流程">
+      <div class="sidebar-heading">排版流程</div>
+      <nav class="workflow-list">
+        <button class="workflow-item active" data-step="import">
+          <span class="step-icon">1</span><span><b>导入内容</b><small>粘贴或输入文章</small></span>
+        </button>
+        <button class="workflow-item" data-step="structure">
+          <span class="step-icon">2</span><span><b>智能结构</b><small>识别标题与段落</small></span>
+        </button>
+        <button class="workflow-item" data-step="theme">
+          <span class="step-icon">3</span><span><b>视觉主题</b><small>选择公众号样式</small></span>
+        </button>
+        <button class="workflow-item" data-step="preview">
+          <span class="step-icon">4</span><span><b>微信预览</b><small>检查手机阅读效果</small></span>
+        </button>
+        <button class="workflow-item" data-step="publish">
+          <span class="step-icon">5</span><span><b>复制发布</b><small>粘贴到公众号后台</small></span>
+        </button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="shield-icon">✓</span>
+        <div><b>隐私保护</b><p>无账号、无云端、无内容日志，刷新页面不会上传任何文章。</p></div>
+      </div>
+    </aside>
+
+    <section class="studio">
+      <div class="studio-header">
+        <div>
+          <p class="eyebrow">CONTENT STUDIO</p>
+          <h1>文章排版工作台</h1>
+          <p>输入内容后自动生成微信公众号兼容的全内联样式 HTML</p>
+        </div>
+        <button id="smart-structure" class="outline-button">
+          <span>✦</span> 智能识别全文结构
+        </button>
+      </div>
+
+      <div class="theme-strip" aria-label="主题预设">
+        <button class="theme-card active" data-theme="default" style="--sample:#1677c8;--sample-soft:#eaf5fd">
+          <span class="theme-sample"><i></i><b>科技前沿与商业洞察</b><em>数字化转型的关键趋势</em><small>清晰、专业、有秩序的蓝色主题。</small></span>
+          <span class="theme-name"><i></i>经典蓝 <small>已选择</small></span>
+        </button>
+        <button class="theme-card" data-theme="violet" style="--sample:#7c3aed;--sample-soft:#f3e8ff">
+          <span class="theme-sample"><i></i><b>美学与生活的交汇</b><em>在日常中发现设计之美</em><small>优雅柔和，适合生活与审美表达。</small></span>
+          <span class="theme-name"><i></i>优雅紫 <small>选择</small></span>
+        </button>
+        <button class="theme-card" data-theme="warm" style="--sample:#e85d35;--sample-soft:#fff0eb">
+          <span class="theme-sample"><i></i><b>自媒体创作实战手册</b><em>从零到一打造个人品牌</em><small>温暖醒目，适合故事与运营内容。</small></span>
+          <span class="theme-name"><i></i>暖橙 <small>选择</small></span>
+        </button>
+        <button class="theme-card" data-theme="ink" style="--sample:#171717;--sample-soft:#f3f4f6">
+          <span class="theme-sample"><i></i><b>思考的边界</b><em>为什么深度思考越来越稀缺</em><small>去除干扰，突出文字本身的力量。</small></span>
+          <span class="theme-name"><i></i>极简黑 <small>选择</small></span>
+        </button>
+      </div>
+
+      <div class="work-grid">
+        <section class="work-panel editor-panel">
+          <div class="panel-header">
+            <div class="tabs" role="tablist" aria-label="编辑模式">
+              <button class="tab active" data-mode="markdown">Markdown</button>
+              <button class="tab" data-mode="rich">富文本</button>
+            </div>
+            <span class="auto-hint"><i></i> 粘贴时自动识别段落</span>
+          </div>
+
+          <div id="markdown-wrap" class="input-wrap">
+            <textarea id="markdown" spellcheck="false" aria-label="Markdown 编辑器"># 欢迎使用微信排版台
+
+这是一款**完全本地运行**的微信公众号排版工具。
+
+真正重要的不是堆叠多少样式，而是让读者一眼看到文章的核心。
+
+## 支持的内容
+
+- Markdown 与富文本
+- 自动识别标题、段落和列表
+- 图片、引用、表格和代码块
+- 复制时生成全内联样式 HTML
+
+> 你的文章内容不会离开当前设备。
+
+```go
+func main() {
+    fmt.Println("Hello, WeChat!")
+}
+```
+</textarea>
+          </div>
+
+          <div id="rich-wrap" class="input-wrap hidden">
+            <div class="toolbar" aria-label="富文本工具栏">
+              <button data-command="bold" title="加粗"><b>B</b></button>
+              <button data-command="italic" title="斜体"><i>I</i></button>
+              <button data-block="h2">标题</button>
+              <button data-block="blockquote">引用</button>
+              <button data-command="insertUnorderedList">列表</button>
+              <label class="file-button">插入图片<input id="image" type="file" accept="image/*"></label>
+            </div>
+            <div id="rich" class="rich-editor" contenteditable="true" aria-label="富文本编辑器"><h2>富文本编辑</h2><p>可直接粘贴普通文章，系统会自动识别标题、段落和列表。</p></div>
+          </div>
+
+          <div class="editor-footer">
+            <span id="status" aria-live="polite">已就绪</span>
+            <span id="editor-count">0 字</span>
+          </div>
+        </section>
+
+        <section class="work-panel preview-panel">
+          <div class="panel-header preview-heading">
+            <div><b>公众号预览</b><span>375px 内容宽度</span></div>
+            <span class="live-badge"><i></i> 实时</span>
+          </div>
+          <div class="preview-scroll">
+            <div class="phone-shell">
+              <div class="wechat-bar"><span>‹</span><b>公众号文章预览</b><i>•••</i></div>
+              <article id="preview" class="preview"></article>
+              <div class="preview-end">— END —</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <aside class="inspector">
+      <section class="inspector-section progress-section">
+        <div class="inspector-title"><b>配置进度</b><strong><span id="progress-score">4</span><small>/5</small></strong></div>
+        <div class="progress-track"><i id="progress-bar"></i></div>
+        <div class="progress-chips">
+          <span class="done">✓ 导入</span><span class="done">✓ 结构</span><span class="done">✓ 主题</span><span class="current">○ 预览</span><span id="publish-chip">○ 发布</span>
+        </div>
+      </section>
+
+      <section class="inspector-section">
+        <h2>智能识别</h2>
+        <label class="switch-row">
+          <span><b>粘贴时自动分段</b><small>识别标题、章节、列表和正文</small></span>
+          <input id="auto-structure" type="checkbox" checked><i></i>
+        </label>
+        <label class="switch-row emphasis-row">
+          <span><b>自动标注精彩句</b><small>重点句自动加粗、着色或加底纹</small></span>
+          <input id="auto-emphasis" type="checkbox" checked><i></i>
+        </label>
+        <div id="structure-summary" class="recognition-result">
+          <span>✦</span><p><b>结构识别已开启</b><small>粘贴多行纯文本即可自动整理</small></p>
+        </div>
+        <div id="emphasis-summary" class="recognition-result emphasis-result">
+          <span>◆</span><p><b>精彩句识别已开启</b><small>预览时自动判断并突出重点表达</small></p>
+        </div>
+      </section>
+
+      <section class="inspector-section">
+        <h2>文章概览</h2>
+        <div class="stat-grid">
+          <div><strong id="stat-chars">0</strong><span>字数</span></div>
+          <div><strong id="stat-paragraphs">0</strong><span>段落</span></div>
+          <div><strong id="stat-headings">0</strong><span>标题</span></div>
+          <div><strong id="stat-images">0</strong><span>图片</span></div>
+        </div>
+      </section>
+
+      <section class="inspector-section output-section">
+        <h2>导出与发布</h2>
+        <div class="output-card">
+          <span class="file-icon">&lt;/&gt;</span>
+          <div><b>全内联 HTML</b><small>无需 CSS 文件，可直接粘贴</small></div>
+          <span class="ready-badge">就绪</span>
+        </div>
+        <button id="copy" class="primary-button"><span>⇩</span> 复制到微信公众号</button>
+        <button id="export" class="secondary-button">导出 HTML 文件</button>
+        <p class="publish-note">粘贴后请在公众号后台再次检查图片、表格和代码块。</p>
+      </section>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
